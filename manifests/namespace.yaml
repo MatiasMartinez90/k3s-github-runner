@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: github-runner
+  labels:
+    name: github-runner
+    app: github-actions-runner

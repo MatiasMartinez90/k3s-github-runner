@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-runner
+  namespace: github-runner
+  labels:
+    app: github-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-runner
+  template:
+    metadata:
+      labels:
+        app: github-runner
+    spec:
+      containers:
+      - name: github-runner
+        image: sumologic/github-runner:latest
+        env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: runner-secret
+              key: github-token
+        - name: GITHUB_REPOSITORY
+          valueFrom:
+            secretKeyRef:
+              name: runner-secret  
+              key: github-repo
+        - name: RUNNER_NAME
+          value: "k3s-arm-runner"
+        - name: RUNNER_LABELS
+          value: "self-hosted,k3s,arm64,linux"
+        - name: RUNNER_WORKDIR
+          value: "/tmp/github-runner-workdir"
+        volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+        - name: runner-workdir
+          mountPath: /tmp/github-runner-workdir
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        securityContext:
+          privileged: true
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      - name: runner-workdir
+        emptyDir: {}
+      restartPolicy: Always
